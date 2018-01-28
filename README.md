@@ -40,9 +40,12 @@ observations.
 
 The output can be found at this link
 
+(https://github.com/lakhani9/Practical-Machine-Learning/blob/master/Practical_Machine_Learning_-_Prediction_Project.html )  
+ 
+### PDF output  
 
-Link to github html output: (https://github.com/lakhani9/Practical-Machine-Learning/blob/master/Practical_Machine_Learning_-_Prediction_Project.html )
 
+https://github.com/lakhani9/Practical-Machine-Learning/blob/master/Practical_Machine_Learning_-_Prediction_Project.pdf
 
 
 
