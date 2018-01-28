@@ -1,4 +1,4 @@
-## Practical Machine Learning - project
+## Practical Machine Learning - Prediction 
 
 ### Background
 
@@ -16,6 +16,9 @@ on the Weight Lifting Exercise Dataset).
 
 The training data for this project are available here. The test data are available here.
 
+{r} [training data] (https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)
+{r} [testing data] ()https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
 
 ### Project's rubric ###  
 
@@ -26,7 +29,7 @@ any of the other variables to predict with.
 Create a report describing how to build the model, how to use cross validation, what the expected out of sample error is, and why make
 the choices. Then use the prediction model to predict 20 different test cases.
 
-### Model Approach used in project ###  
+### Approach to select model used in project ###  
 
 The project explores Random Forest, Forest of Trees and GBM models to arrive at the best model to predict 'classe' - thus predicting the manner 
 in which they did the exercise. The models are trained on the training data, validated using the validated data and finally tested on 20
