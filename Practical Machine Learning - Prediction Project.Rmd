@@ -217,8 +217,25 @@ AccuracyResults <- data.frame(
 print(AccuracyResults)
 ```
 
+### 5. Out of sample error ###
 
-### 5. Prediction on test cases and output submission ####
+* The optimum rf model (mtry=27) has accuracy of 0.988. Hence in sample error is 0.012% (1-.988).
+* Out of sample error is calculated used the myvalidation dataset below as the number of classe matches/total observations in the prediction
+
+
+```{r}
+fit_rf
+predvalid <- predict(fit_rf,newdata=myvalidation)
+length(predvalid)
+oos_acc <- sum(predvalid == myvalidation$classe)/length(predvalid)
+oos_error <- 1- oos_acc
+paste0 ('Out of sample error ',round(oos_error,5))
+
+```
+
+
+
+### 6. Prediction on test cases and output submission ####
 
 ```{r final model evaluation,echo=TRUE}
 

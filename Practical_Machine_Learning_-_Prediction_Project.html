@@ -461,8 +461,41 @@ print(AccuracyResults)</code></pre>
 ## 2   GBM 0.9788285
 ## 3    RF 0.9898847</code></pre>
 </div>
+<div id="out-of-sample-error" class="section level3">
+<h3>5. Out of sample error</h3>
+<ul>
+<li>The optimum rf model (mtry=27) has accuracy of 0.988. Hence in sample error is 0.012% (1-.988).</li>
+<li>Out of sample error is calculated used the myvalidation dataset below as the number of classe matches/total observations in the prediction</li>
+</ul>
+<pre class="r"><code>fit_rf</code></pre>
+<pre><code>## Random Forest 
+## 
+## 9926 samples
+##   53 predictor
+##    5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (3 fold) 
+## Summary of sample sizes: 6617, 6618, 6617 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa    
+##    2    0.9889179  0.9859789
+##   27    0.9935521  0.9918429
+##   53    0.9897239  0.9870000
+## 
+## Accuracy was used to select the optimal model using the largest value.
+## The final value used for the model was mtry = 27.</code></pre>
+<pre class="r"><code>predvalid &lt;- predict(fit_rf,newdata=myvalidation)
+length(predvalid)</code></pre>
+<pre><code>## [1] 4251</code></pre>
+<pre class="r"><code>oos_acc &lt;- sum(predvalid == myvalidation$classe)/length(predvalid)
+oos_error &lt;- 1- oos_acc
+paste0 ('Out of sample error ',round(oos_error,5))</code></pre>
+<pre><code>## [1] &quot;Out of sample error 0.01012&quot;</code></pre>
+</div>
 <div id="prediction-on-test-cases-and-output-submission" class="section level3">
-<h3>5. Prediction on test cases and output submission</h3>
+<h3>6. Prediction on test cases and output submission</h3>
 <pre class="r"><code>imp &lt;- varImp(fit_rf)
 imp$importance$Overall &lt;- sort(imp$importance$Overall, decreasing=TRUE)
 featureDF &lt;- data.frame(FeatureName=row.names(imp$importance), Importance=imp$importance$Overall)
