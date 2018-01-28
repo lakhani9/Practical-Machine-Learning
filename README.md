@@ -16,8 +16,9 @@ on the Weight Lifting Exercise Dataset).
 
 The training data for this project are available here. The test data are available here.
 
-{r} [training data] (https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)
-{r} [testing data] ()https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+training data: (https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)  
+
+testing data: (https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv)
 
 
 ### Project's rubric ###  
@@ -40,7 +41,7 @@ observations.
 The output can be found at this link
 
 
-{r} [Link to github html file] (https://github.com/lakhani9/Practical-Machine-Learning/blob/master/Practical_Machine_Learning_-_Prediction_Project.html )
+Link to github html output: (https://github.com/lakhani9/Practical-Machine-Learning/blob/master/Practical_Machine_Learning_-_Prediction_Project.html )
 
 
 
