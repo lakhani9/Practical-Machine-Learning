@@ -3,8 +3,8 @@ title: 'Practical Machine Learning:  Prediction'
 author: "N. Lakhani"
 date: "27 January 2018"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ### Executive Summary
