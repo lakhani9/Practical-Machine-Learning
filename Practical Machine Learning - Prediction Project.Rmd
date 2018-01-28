@@ -1,0 +1,252 @@
+---
+title: 'Practical Machine Learning:  Prediction'
+author: "N. Lakhani"
+date: "27 January 2018"
+output: html_document
+---
+
+### Executive Summary
+
+This project involves analysis of wearable fitness trackers. "Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. 
+
+In this project, my goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset)
+
+
+### 1. Loading libraries ###
+
+The libraries needed: caret, rpart, randomForest, reshape2, AppliedPredictiveModeling are loaded in workspace. 
+
+```{r setup, echo=FALSE, include=FALSE,warning=FALSE}
+
+# knitr::opts_chunk$set(echo = FALSE,fig.align='center',fig.height=5,fig.width=8,warning=FALSE)
+
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(AppliedPredictiveModeling)
+library(reshape2)
+
+```
+
+### 2. Data cleaning and preparation ###
+
+Input data from url's provided. The training data is split (70:30) into training & validation data (to be used as out of sample data) for cross validation. The following observations are made regarding the data:
+
+* Since data from belt,forearm,arm, and dumbell are to be examined - filter out the rest
+* There are dummy variables with no measurements for each observation, but these are summary stats for each time sliding window. 
+  - The 'X' variable (row number) and 'new window' (marker for summary data), timestamp are not relevant in the current analysis, hence we drop columns (1:5)
+ * Several variables have near zero values (NZV) & 'NA's. Variables with NZV's & NA's over 70% are dropped. Interestingly even with 70%, we find that all variables with any NA's are dropped. 
+
+
+```{r clean data,echo=FALSE,results='hide'}
+
+set.seed(12345)
+testing <- read.csv('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv',na.strings=c('NA','#DIV/0!',''))
+training <- read.csv('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv',na.strings=c('NA','#DIV/0!',''))
+
+
+# determine nearzero variables for elimination
+nzv <- nearZeroVar(training,saveMetrics = TRUE)
+training <- training[,nzv$nzv==FALSE]
+
+nzv <- nearZeroVar(testing,saveMetrics = TRUE)
+testing <- testing[,nzv$nzv==FALSE]
+
+
+# partition training data into training (70% and validation (30%)
+inTrain <- createDataPartition(training$classe,p=0.7,list=FALSE)
+mytraining <- training[inTrain,]
+myvalidation <- training[-inTrain,]
+
+
+# identify variables with > 70% NA's, the remaining variables are eliminated. Also variables 1:5 are dropped as justified earlier 
+NAvars <- sapply(mytraining, function (x) mean(is.na(x))) > 0.70 
+mytraining <- mytraining[,NAvars == F]
+mytraining <- mytraining[,-(1:5)]
+
+NAvars <- sapply(myvalidation, function (x) mean(is.na(x))) > 0.70 
+myvalidation <- myvalidation[,NAvars == F]
+myvalidation <- myvalidation[,-(1:5)]
+
+NAvars <- sapply(training, function (x) mean(is.na(x))) > 0.70 
+training <- training[,NAvars == F]
+training <- training[,-(1:5)]
+
+
+NAvars <- sapply(testing, function (x) mean(is.na(x))) > 0.70 
+testing <- testing[,NAvars == F]
+testing <- testing[,-(1:5)]
+
+filter <- grepl('forearm|belt|arm|dumbell',names(mytraining))
+mytraining <- mytraining[filter,]
+myvalidation <- myvalidation[filter,]
+testing <- testing[filter,]
+
+
+```
+
+### 3. Cleaned data and features  ###
+
+The cleaned training data set has:
+
+* 54 variables including **classe** with 9,926 observations.The testing dataset has 20 observations and 54 variables. 
+* The absence of NA's in any variables is also validated. 
+* The corr plot on the cleaned dataset indicates that very few of the variables have strong correlation (values close to -1 or 1, ignoring the squares along the diagonal in the plot, which shows cor for variables to themselves). 
+*Also looking at the cor values and not too strong relationship, I feel there is no need for PCA and further variable elimination.
+
+
+
+```{r validate clean data,echo=FALSE,results='hide'}
+print(names(mytraining))
+print(names(myvalidation))
+dim(mytraining)
+dim(myvalidation)
+colSums(is.na(mytraining))
+unique(mytraining$classe)
+
+# get corelation vlues and print plot to visually check strength of relationships
+
+cormat <- cor(mytraining[sapply(mytraining, is.numeric)])
+cormat <- melt(cormat)
+qplot(x=Var1, y=Var2, data=cormat, fill=value, geom="tile") + scale_fill_gradient2(limits=c(-1, 1)) + theme(axis.text.x = element_text(angle=-90, vjust=0.5, hjust=0))
+
+```
+
+
+### 4. Building the model and parameters ###
+
+I have taken the following approach:  
+
+
+* The variable being predicted **classe** is a factor with 5 levels, so this is a classification problem.
+* The 3 models evaluated for best accuracy are 
+++a) Decision Trees (rpart), 
+++b) Stochastic gradient boosting trees (gbm), 
+++c) Random forest decision trees (rf).
+* I do a 3-fold cross validation using the function train to build the model  
+
+
+
+#### 4a. Decision trees model results  ####  
+
+The first model we explore is Decision Trees. As can be seen visually from the plot and confusion matrix (for classe values):  
+
+
+* the accuracy is quite low at 52% and
+* the confusion matrix is highly populated across the matrix indicating many false postives/negatives; not a great model.  
+ 
+
+```{r rpart model,echo=FALSE,results='hide'}
+
+# define control parameters to be cross validation & create rpart model 
+mod_control <- trainControl(method='cv',number=3)
+fit_rpart <- train(classe~.,data=mytraining,method='rpart',trControl=mod_control)
+
+# predict classe values on validation data
+pred_rpart <- predict(fit_rpart,newdata=myvalidation)
+cm_tree <- confusionMatrix(pred_rpart,myvalidation$classe)
+cm_tree
+
+plot(cm_tree$table, fill = cm_tree$byClass, 
+     main = paste("Decision Tree - Accuracy =",
+                  round(cm_tree$overall['Accuracy'], 3)))
+
+```
+
+
+
+#### 4b. Random Forest model results ####
+
+The random forest model shows a significant improvement over the rpart model. As can be seen in output below, both from the plot and confusion matrix (for classe values): 
+*The accuracy is above 99%. 
+*The confusion matrix is quite clean with the diagonal of the matrix having majority of the matches. 
+*The accuracy also peaks at about 27 predictors. The variables are listed in the order of importance.   
+
+
+
+```{r rf model,echo=FALSE,results='hide',warning=FALSE}
+set.seed(12345)
+fit_rf <- train(classe ~ ., data=mytraining,method='rf',trControl=mod_control)
+fit_rf$finalModel
+
+pred_rf <- predict(fit_rf, myvalidation)
+cm_rf <- confusionMatrix(pred_rf, myvalidation$classe)
+cm_rf
+
+plot(cm_rf$table, fill = cm_rf$byClass, 
+     main = paste("RF Tree - Accuracy =",
+                  round(cm_rf$overall['Accuracy'], 3)))
+
+```
+
+
+
+#### 4c. gbm model results ####
+
+The gbm model shows:
+*Significant improvement over the rpart model and is slightly better than the rf model. 
+*As can be seen in the output below, both from the plot and confusion matrix (for classe values), the accuracy is 98%. Of the 53 predictors, only 12 have influence 
+
+
+```{r gbm model,echo=FALSE,results='hide',warning=FALSE}
+
+fit_gbm <- train(classe ~.,data=mytraining,method='gbm',trControl=mod_control,verbose=FALSE)
+fit_gbm$finalModel
+
+pred_gbm <- predict(fit_gbm, myvalidation)
+cm_gbm <- confusionMatrix(pred_gbm, myvalidation$classe)
+cm_gbm
+
+plot(cm_gbm$table, fill = cm_gbm$byClass, 
+     main = paste("gbm - Accuracy =",
+                  round(cm_gbm$overall['Accuracy'], 3)))
+
+```
+
+
+### 4. Final model and evaluation ####
+
+Based on the results, I have picked the **rf** model as the final model with accuracy of 0.996. The top 5 features in order of inluence are shown below along with the accuracy predictions for the test dataset 
+
+```{r final results,echo=FALSE}
+AccuracyResults <- data.frame(
+  Model = c('CART', 'GBM', 'RF'),
+  Accuracy = rbind(cm_tree$overall[1], cm_gbm$overall[1], cm_rf$overall[1])
+)
+print(AccuracyResults)
+```
+
+
+### 5. Prediction on test cases and output submission ####
+
+```{r final model evaluation,echo=FALSE}
+
+imp <- varImp(fit_rf)
+imp$importance$Overall <- sort(imp$importance$Overall, decreasing=TRUE)
+featureDF <- data.frame(FeatureName=row.names(imp$importance), Importance=imp$importance$Overall)
+
+
+print(featureDF[1:5,])
+
+predtest <- predict(fit_rf,newdata=testing)
+predtest <- as.character(predtest)
+
+pml_write <- function (x) {
+  n <- length(x)
+  for (i in 1:n) {
+    filename <- paste0('problem_id_',i,'.txt')
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+  }
+
+pml_write(predtest)
+predtest
+
+```
+
+
+
+
+
