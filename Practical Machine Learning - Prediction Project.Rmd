@@ -18,9 +18,7 @@ In this project, my goal is to use data from accelerometers on the belt, forearm
 
 The libraries needed: caret, rpart, randomForest, reshape2, AppliedPredictiveModeling are loaded in workspace. 
 
-```{r setup, echo=FALSE, include=FALSE,warning=FALSE}
-
-# knitr::opts_chunk$set(echo = FALSE,fig.align='center',fig.height=5,fig.width=8,warning=FALSE)
+```{r setup, echo=FALSE, warning=FALSE}
 
 library(caret)
 library(rpart)
